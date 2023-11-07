@@ -10,6 +10,7 @@ import { getAllFiles } from "./common";
 // Server setup
 const app = new Koa();
 
+// Directory watcher setup
 const watcher = chokidar.watch(`${WATCH_DIRECTORY}/**`, {
   persistent: true,
   interval: 300,
@@ -36,33 +37,39 @@ app.use((ctx, next) => {
       console.log(`hot-reload on ${path}`);
     };
 
-    watcher.on("add", sseHandler).on("change", sseHandler).on("unlink", sseHandler).on("addDir", sseHandler).on("unlinkDir", sseHandler);
+    watcher
+      .on("add", sseHandler)
+      .on("change", sseHandler)
+      .on("unlink", sseHandler)
+      .on("addDir", sseHandler)
+      .on("unlinkDir", sseHandler);
 
     ctx.req.on("close", () => {
       stream.end();
     });
   } else {
-    ctx.set({
-      Connection: 'close',
-    });
-    return next();
+    next();
   }
 });
 
 // Root URL processor and static serve
 app.use((ctx, next) => {
-  const files = getAllFiles(WATCH_DIRECTORY);
+  try {
+    const files = getAllFiles(WATCH_DIRECTORY);
 
-  if (ctx.path === "/" || ctx.path === "/index.html") {
-    ctx.body = readFileSync(`${WATCH_DIRECTORY}/index.html`).toString();
-    next();
-  } else if (files.includes(ctx.path)) {
-    const path = `${WATCH_DIRECTORY}${ctx.path}`;
-    ctx.body = readFileSync(path);
-    ctx.type = mime.lookup();
-  }
-  else {
-    ctx.redirect('/');
+    if (ctx.path === "/") {
+      ctx.body = readFileSync(`${WATCH_DIRECTORY}/index.html`).toString();
+      next();
+    } else if (files.includes(ctx.path)) {
+      const path = `${WATCH_DIRECTORY}${ctx.path}`;
+      ctx.body = readFileSync(path);
+      ctx.type = mime.lookup(path).toString();
+    } else {
+      ctx.status = 404;
+    }
+  } catch (err) {
+    ctx.status = 500;
+    ctx.body = err.message;
   }
 });
 

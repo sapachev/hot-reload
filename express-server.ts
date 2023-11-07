@@ -1,5 +1,4 @@
 import chokidar from "chokidar";
-import bodyParser from "body-parser";
 import express, { Express } from "express";
 import { readFileSync } from "fs";
 
@@ -49,18 +48,18 @@ const watcher = chokidar.watch(`${WATCH_DIRECTORY}/**`, {
 // Server setup
 const app: Express = express();
 
-// Root
-app.get('/', bodyParser.text(), readIndex, injectVariable, injectSse, (req, res) => {
+// Root URL processor with custom middlewares
+app.get("/", readIndex, injectVariable, injectSse, (req, res) => {
   res.send(req.body);
 });
 
 // Hot-reload feature over Server-sent events (SSE)
-app.get('/events', (req, res, next) => {
+app.get("/events", (req, res, next) => {
   try {
     const headers = {
-      'Content-Type': 'text/event-stream',
-      'Connection': 'keep-alive',
-      'Cache-Control': 'no-cache'
+      "Content-Type": "text/event-stream",
+      Connection: "keep-alive",
+      "Cache-Control": "no-cache",
     };
     res.writeHead(200, headers);
 
@@ -71,10 +70,15 @@ app.get('/events', (req, res, next) => {
       console.log(`hot-reload on ${path}`);
     };
 
-    watcher.on("add", sseHandler).on("change", sseHandler).on("unlink", sseHandler).on("addDir", sseHandler).on("unlinkDir", sseHandler);
+    watcher
+      .on("add", sseHandler)
+      .on("change", sseHandler)
+      .on("unlink", sseHandler)
+      .on("addDir", sseHandler)
+      .on("unlinkDir", sseHandler);
 
-    req.on('close', () => {
-      res.end('ok');
+    req.on("close", () => {
+      res.end("ok");
     });
   } catch (err) {
     next(err.message);
@@ -84,4 +88,6 @@ app.get('/events', (req, res, next) => {
 // Static serve
 app.use(express.static(WATCH_DIRECTORY));
 
-app.listen(SERVER_PORT, () => console.log(`hot-reload server was started on port ${SERVER_PORT}`));
+app.listen(SERVER_PORT, () =>
+  console.log(`hot-reload server was started on port ${SERVER_PORT}`),
+);

@@ -2,6 +2,10 @@
 
 This repository contains demo of hot-reload server, based on server-sent events (SSE). This demo show the same approach, which was implemented in [The Error Pages](https://github.com/sapachev/error-pages) tool.
 
+The diagram below shows the data flow and explains in general terms how it works:
+
+![Diagram](docs/hot-reload.en.png)
+
 Here you can find the hot-reload examples under [Express](https://expressjs.com/) and [Koa](https://koajs.com/) servers.
 
 Served files are located in `src` directory and can be edited to see how the hot-reload works. You can edit, add or remove files in this directory.
